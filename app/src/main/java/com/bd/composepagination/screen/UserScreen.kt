@@ -1,5 +1,8 @@
 package com.bd.composepagination.screen
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,23 +14,24 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
@@ -38,43 +42,21 @@ import com.bd.composepagination.viewmodel.UserViewModel
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun UserScreen(
-    viewModel: UserViewModel
+    viewModel: UserViewModel,
+    isDarkTheme: Boolean,
+    onThemeToggle: () -> Unit
 ) {
+    val users = viewModel.users.collectAsLazyPagingItems()
+    val isRefreshing = users.loadState.refresh is LoadState.Loading
 
-    val users =
-        viewModel.users.collectAsLazyPagingItems()
-
-    val isRefreshing =
-        users.loadState.refresh is LoadState.Loading
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Users (${users.itemCount})"
-                    )
-                }
-            )
-        }
-    ) {
-        innerPadding ->
-
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        InboxHeader(isDarkTheme = isDarkTheme, onThemeToggle = onThemeToggle)
         PullToRefreshBox(
             isRefreshing = isRefreshing,
-
-            onRefresh = {
-                users.refresh()
-            },
-
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+            onRefresh = users::refresh,
+            modifier = Modifier.fillMaxSize()
         ) {
-
-            LazyColumn(
-                modifier = Modifier.fillMaxSize()
-            ) {
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
 
                 items(
                     count = users.itemCount,
@@ -86,10 +68,8 @@ fun UserScreen(
                     val user = users[index]
 
                     if (user != null) {
-
                         UserItem(user)
-
-                        HorizontalDivider()
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
                     }
                 }
 
@@ -101,14 +81,9 @@ fun UserScreen(
                     item {
 
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
+                            modifier = Modifier.fillMaxWidth().padding(20.dp),
                             contentAlignment = Alignment.Center
-                        ) {
-
-                            CircularProgressIndicator()
-                        }
+                        ) { CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) }
                     }
                 }
 
@@ -119,27 +94,7 @@ fun UserScreen(
 
                     item {
 
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-
-                        ) {
-
-                            Text(
-                                text = "Failed to load more users"
-                            )
-
-                            Button(
-                                onClick = {
-                                    users.retry()
-                                }
-                            ) {
-
-                                Text("Retry")
-                            }
-                        }
+                        PagingError(onRetry = users::retry)
                     }
                 }
             }
@@ -155,24 +110,58 @@ fun UserScreen(
                 val error =
                     users.loadState.refresh as LoadState.Error
 
-                ErrorScreen(
-                    message =
-                        error.error.message
-                            ?: "Something went wrong",
-                    onRetry = {
-                        users.retry()
-                    }
-                )
+                ErrorScreen(error.error.message ?: "Something went wrong", users::retry)
             }
         }
     }
 }
 
 @Composable
-fun ErrorScreen(
-    message: String,
-    onRetry: () -> Unit
-) {
+private fun InboxHeader(isDarkTheme: Boolean, onThemeToggle: () -> Unit) {
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth().height(60.dp).background(MaterialTheme.colorScheme.primary).padding(horizontal = 20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            DrawerIcon(modifier = Modifier.size(32.dp))
+            Text(
+                text = "Inbox", color = MaterialTheme.colorScheme.onPrimary, fontSize = 17.sp, fontWeight = FontWeight.Medium,
+                modifier = Modifier.weight(1f), textAlign = TextAlign.Center
+            )
+            IconButton(onClick = onThemeToggle, modifier = Modifier.size(32.dp)) {
+                Text(
+                    text = if (isDarkTheme) "☀" else "☾",
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
+                    fontSize = 21.sp
+                )
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().height(52.dp).background(MaterialTheme.colorScheme.surfaceVariant).padding(horizontal = 20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("⌕", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 27.sp)
+            Spacer(Modifier.width(13.dp))
+            Text("Search", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+        }
+    }
+}
+
+@Composable
+private fun DrawerIcon(modifier: Modifier = Modifier) {
+    val iconColor = MaterialTheme.colorScheme.onPrimary
+    Canvas(modifier = modifier.padding(7.dp)) {
+        val strokeWidth = 1.5.dp.toPx()
+        val inset = 1.dp.toPx()
+        val centerY = size.height / 2
+        drawLine(iconColor, start = androidx.compose.ui.geometry.Offset(inset, centerY - 5.dp.toPx()), end = androidx.compose.ui.geometry.Offset(size.width - inset, centerY - 5.dp.toPx()), strokeWidth = strokeWidth, cap = StrokeCap.Round)
+        drawLine(iconColor, start = androidx.compose.ui.geometry.Offset(inset, centerY), end = androidx.compose.ui.geometry.Offset(size.width * 0.68f, centerY), strokeWidth = strokeWidth, cap = StrokeCap.Round)
+        drawLine(iconColor, start = androidx.compose.ui.geometry.Offset(inset, centerY + 5.dp.toPx()), end = androidx.compose.ui.geometry.Offset(size.width - inset, centerY + 5.dp.toPx()), strokeWidth = strokeWidth, cap = StrokeCap.Round)
+    }
+}
+
+@Composable
+fun ErrorScreen(message: String, onRetry: () -> Unit) {
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -184,9 +173,7 @@ fun ErrorScreen(
                 Alignment.CenterHorizontally
         ) {
 
-            Text(
-                text = message
-            )
+            Text(text = message, color = MaterialTheme.colorScheme.onSurface)
 
             Spacer(
                 modifier = Modifier.height(8.dp)
@@ -202,49 +189,55 @@ fun ErrorScreen(
     }
 }
 
+@Composable
+private fun PagingError(onRetry: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("Failed to load more users", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Button(onClick = onRetry) { Text("Retry") }
+    }
+}
 
 @Composable
-fun UserItem(
-    user: User
-) {
-
+fun UserItem(user: User) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(
-                horizontal = 16.dp,
-                vertical = 12.dp
-            )
+        modifier = Modifier.fillMaxWidth().height(82.dp).padding(horizontal = 20.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-
         AsyncImage(
             model = user.image,
             contentDescription = "Avatar of ${user.firstName} ${user.lastName}",
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
+                .size(52.dp)
         )
 
         Spacer(
-            modifier = Modifier.width(12.dp)
+            modifier = Modifier.width(13.dp)
         )
 
-        Column {
-
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
             Text(
                 text = "${user.firstName} ${user.lastName}",
-                style = MaterialTheme.typography.titleMedium
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
 
             Spacer(
-                modifier = Modifier.height(4.dp)
+                modifier = Modifier.height(3.dp)
             )
 
             Text(
-                text = user.email,
-                style = MaterialTheme.typography.bodyMedium
+                text = user.email, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp,
+                maxLines = 1, overflow = TextOverflow.Ellipsis
             )
         }
+        Spacer(Modifier.width(8.dp))
+        Text("#${user.id}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
     }
 }

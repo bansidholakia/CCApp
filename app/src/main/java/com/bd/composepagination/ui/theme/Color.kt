@@ -2,10 +2,16 @@ package com.bd.composepagination.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+val InboxPurple = Color(0xFF57385F)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+val LightInboxBackground = Color(0xFFFFFFFF)
+val LightInboxSearchBackground = Color(0xFFF9F8F9)
+val LightInboxText = Color(0xFF29252B)
+val LightInboxSecondaryText = Color(0xFF87818A)
+val LightInboxDivider = Color(0xFFEAE7EA)
+
+val DarkInboxBackground = Color(0xFF5D3D60)
+val DarkInboxSearchBackground = Color(0xFF57385B)
+val DarkInboxText = Color(0xFFF8EEF7)
+val DarkInboxSecondaryText = Color(0xFFD0B9CE)
+val DarkInboxDivider = Color(0xFF734F72)

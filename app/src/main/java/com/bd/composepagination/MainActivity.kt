@@ -12,9 +12,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
@@ -44,15 +48,20 @@ class MainActivity : ComponentActivity() {
         val repository = UserRepository(api)
 
         setContent {
+            val systemIsDark = isSystemInDarkTheme()
+            var themeOverride by rememberSaveable { mutableStateOf<Boolean?>(null) }
+            val isDarkTheme = themeOverride ?: systemIsDark
 
-            MaterialTheme {
+            ComposePaginationTheme(darkTheme = isDarkTheme) {
 
                 val viewModel: UserViewModel = viewModel(
                     factory = UserViewModelFactory(repository)
                 )
 
                 UserScreen(
-                    viewModel = viewModel
+                    viewModel = viewModel,
+                    isDarkTheme = isDarkTheme,
+                    onThemeToggle = { themeOverride = !isDarkTheme }
                 )
             }
         }
@@ -70,7 +79,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    ComposePaginationTheme {
+    ComposePaginationTheme(darkTheme = false) {
         Greeting("Android")
     }
 }
