@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 class UserRepository(
     private val api: UserApi
 ) {
-    fun getUsers(): Flow<PagingData<User>> {
+    fun getUsers(query: String): Flow<PagingData<User>> {
 
         return Pager(
             config = PagingConfig(
@@ -21,7 +21,7 @@ class UserRepository(
                 initialLoadSize = 20
             ),
             pagingSourceFactory = {
-                UserPagingSource(api)
+                UserPagingSource(api, query)
             }
         ).flow
     }

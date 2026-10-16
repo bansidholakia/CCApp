@@ -3,10 +3,12 @@ package com.bd.composepagination.paging
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.bd.composepagination.model.User
+import com.bd.composepagination.model.matchesFullName
 import com.bd.composepagination.network.UserApi
 
 class UserPagingSource(
-    private val api: UserApi
+    private val api: UserApi,
+    private val query: String
 ) : PagingSource<Int, User>() {
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, User> {
@@ -16,12 +18,13 @@ class UserPagingSource(
 
         return try {
 
-            val response = api.getUser(
-                limit = limit,
-                skip = skip
-            )
-
-            val users = response.users
+            val response = if (query.isBlank()) {
+                api.getUsers(limit = limit, skip = skip)
+            } else {
+                api.searchUsers(query = query, limit = limit, skip = skip)
+            }
+            val responseUsers = response.users
+            val users = responseUsers.filter { it.matchesFullName(query) }
 
             LoadResult.Page(
                 data = users,
@@ -33,11 +36,11 @@ class UserPagingSource(
                 },
 
                 nextKey = if (
-                    skip + users.size >= response.total
+                    skip + responseUsers.size >= response.total
                 ) {
                     null
                 } else {
-                    skip + users.size
+                    skip + responseUsers.size
                 }
             )
 

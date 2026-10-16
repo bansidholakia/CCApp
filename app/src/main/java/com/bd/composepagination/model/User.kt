@@ -8,6 +8,9 @@ data class User(
     val image: String
 )
 
+fun User.matchesFullName(query: String): Boolean =
+    "$firstName $lastName".contains(query.trim(), ignoreCase = true)
+
 data class UserResponse(
     val users: List<User>,
     val skip: Int,

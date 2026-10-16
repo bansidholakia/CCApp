@@ -7,8 +7,15 @@ import retrofit2.http.Query
 interface UserApi {
 
     @GET("users")
-    suspend fun getUser(
+    suspend fun getUsers(
         @Query("limit") limit: Int,
         @Query("skip") skip: Int
     ) : UserResponse
+
+    @GET("users/search")
+    suspend fun searchUsers(
+        @Query("q") query: String,
+        @Query("limit") limit: Int,
+        @Query("skip") skip: Int
+    ): UserResponse
 }

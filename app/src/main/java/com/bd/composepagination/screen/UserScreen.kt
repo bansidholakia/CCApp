@@ -2,6 +2,7 @@ package com.bd.composepagination.screen
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,7 +23,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
@@ -47,13 +54,28 @@ fun UserScreen(
     onThemeToggle: () -> Unit
 ) {
     val users = viewModel.users.collectAsLazyPagingItems()
-    val isRefreshing = users.loadState.refresh is LoadState.Loading
+    val query by viewModel.searchQuery.collectAsState()
+    var isUserRefreshing by remember { mutableStateOf(false) }
+
+    LaunchedEffect(users.loadState.refresh) {
+        if (users.loadState.refresh !is LoadState.Loading) {
+            isUserRefreshing = false
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        InboxHeader(isDarkTheme = isDarkTheme, onThemeToggle = onThemeToggle)
+        InboxHeader(
+            query = query,
+            isDarkTheme = isDarkTheme,
+            onQueryChange = viewModel::updateSearchQuery,
+            onThemeToggle = onThemeToggle
+        )
         PullToRefreshBox(
-            isRefreshing = isRefreshing,
-            onRefresh = users::refresh,
+            isRefreshing = isUserRefreshing,
+            onRefresh = {
+                isUserRefreshing = true
+                users.refresh()
+            },
             modifier = Modifier.fillMaxSize()
         ) {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -111,13 +133,24 @@ fun UserScreen(
                     users.loadState.refresh as LoadState.Error
 
                 ErrorScreen(error.error.message ?: "Something went wrong", users::retry)
+            } else if (
+                query.isNotBlank() &&
+                users.itemCount == 0 &&
+                users.loadState.refresh !is LoadState.Loading
+            ) {
+                EmptySearchResults(query = query)
             }
         }
     }
 }
 
 @Composable
-private fun InboxHeader(isDarkTheme: Boolean, onThemeToggle: () -> Unit) {
+private fun InboxHeader(
+    query: String,
+    isDarkTheme: Boolean,
+    onQueryChange: (String) -> Unit,
+    onThemeToggle: () -> Unit
+) {
     Column {
         Row(
             modifier = Modifier.fillMaxWidth().height(60.dp).background(MaterialTheme.colorScheme.primary).padding(horizontal = 20.dp),
@@ -142,8 +175,39 @@ private fun InboxHeader(isDarkTheme: Boolean, onThemeToggle: () -> Unit) {
         ) {
             Text("⌕", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 27.sp)
             Spacer(Modifier.width(13.dp))
-            Text("Search", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+            BasicTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+                textStyle = androidx.compose.ui.text.TextStyle(
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 14.sp
+                ),
+                decorationBox = { innerTextField ->
+                    if (query.isEmpty()) {
+                        Text("Search", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+                    }
+                    innerTextField()
+                }
+            )
+            if (query.isNotEmpty()) {
+                IconButton(onClick = { onQueryChange("") }, modifier = Modifier.size(32.dp)) {
+                    Text("×", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 24.sp)
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun EmptySearchResults(query: String) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(
+            text = "No users found for \"$query\"",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 14.sp
+        )
     }
 }
 
