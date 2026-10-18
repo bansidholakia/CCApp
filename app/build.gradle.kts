@@ -60,6 +60,10 @@ dependencies {
     // Compose Material 3
     implementation(libs.androidx.material3)
 
+    // Coil
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
+
     // Retrofit
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
