@@ -2,6 +2,7 @@ package com.bd.composepagination.screen
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -51,7 +52,8 @@ import com.bd.composepagination.viewmodel.UserViewModel
 fun UserScreen(
     viewModel: UserViewModel,
     isDarkTheme: Boolean,
-    onThemeToggle: () -> Unit
+    onThemeToggle: () -> Unit,
+    onUserClick: (Int) -> Unit
 ) {
     val users = viewModel.users.collectAsLazyPagingItems()
     val query by viewModel.searchQuery.collectAsState()
@@ -90,7 +92,7 @@ fun UserScreen(
                     val user = users[index]
 
                     if (user != null) {
-                        UserItem(user)
+                        UserItem(user, onClick = { onUserClick(user.id) })
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
                     }
                 }
@@ -265,9 +267,9 @@ private fun PagingError(onRetry: () -> Unit) {
 }
 
 @Composable
-fun UserItem(user: User) {
+fun UserItem(user: User, onClick: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(82.dp).padding(horizontal = 20.dp),
+        modifier = Modifier.fillMaxWidth().height(82.dp).clickable(onClick = onClick).padding(horizontal = 20.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         AsyncImage(

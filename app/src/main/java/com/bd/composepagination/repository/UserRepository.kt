@@ -4,6 +4,7 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import com.bd.composepagination.model.User
+import com.bd.composepagination.model.UserDetail
 import com.bd.composepagination.network.UserApi
 import com.bd.composepagination.paging.UserPagingSource
 import kotlinx.coroutines.flow.Flow
@@ -25,4 +26,6 @@ class UserRepository(
             }
         ).flow
     }
+
+    suspend fun getUser(id: Int): UserDetail = api.getUser(id)
 }

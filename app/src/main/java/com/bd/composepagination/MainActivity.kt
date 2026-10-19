@@ -25,13 +25,21 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.bd.composepagination.model.User
 import com.bd.composepagination.network.UserApi
 import com.bd.composepagination.repository.UserRepository
 import com.bd.composepagination.screen.UserScreen
+import com.bd.composepagination.screen.UserDetailsScreen
 import com.bd.composepagination.ui.theme.ComposePaginationTheme
 import com.bd.composepagination.viewmodel.UserViewModel
 import com.bd.composepagination.viewmodel.UserViewModelFactory
+import com.bd.composepagination.viewmodel.UserDetailViewModel
+import com.bd.composepagination.viewmodel.UserDetailViewModelFactory
 import coil3.compose.AsyncImage
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -53,16 +61,30 @@ class MainActivity : ComponentActivity() {
             val isDarkTheme = themeOverride ?: systemIsDark
 
             ComposePaginationTheme(darkTheme = isDarkTheme) {
-
-                val viewModel: UserViewModel = viewModel(
-                    factory = UserViewModelFactory(repository)
-                )
-
-                UserScreen(
-                    viewModel = viewModel,
-                    isDarkTheme = isDarkTheme,
-                    onThemeToggle = { themeOverride = !isDarkTheme }
-                )
+                val navController = rememberNavController()
+                NavHost(navController = navController, startDestination = "users") {
+                    composable("users") {
+                        val viewModel: UserViewModel = viewModel(
+                            factory = UserViewModelFactory(repository)
+                        )
+                        UserScreen(
+                            viewModel = viewModel,
+                            isDarkTheme = isDarkTheme,
+                            onThemeToggle = { themeOverride = !isDarkTheme },
+                            onUserClick = { userId -> navController.navigate("user/$userId") }
+                        )
+                    }
+                    composable(
+                        route = "user/{userId}",
+                        arguments = listOf(navArgument("userId") { type = NavType.IntType })
+                    ) { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getInt("userId") ?: return@composable
+                        val viewModel: UserDetailViewModel = viewModel(
+                            factory = UserDetailViewModelFactory(userId, repository)
+                        )
+                        UserDetailsScreen(viewModel = viewModel, onBack = navController::popBackStack)
+                    }
+                }
             }
         }
     }
